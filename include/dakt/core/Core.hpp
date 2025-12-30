@@ -7,6 +7,7 @@
 
 #include "dakt/core/Buffer.hpp"
 #include "dakt/core/FileSystem.hpp"
+#include "dakt/core/Geometry.hpp"
 #include "dakt/core/Hash.hpp"
 #include "dakt/core/Macros.hpp"
 #include "dakt/core/Memory.hpp"

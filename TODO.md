@@ -4,6 +4,18 @@
 
 The Core module is feature-complete and ready for use. Items below are enhancements and optimizations.
 
+### Core Headers
+- `Types.hpp` - Fundamental type aliases (i8-i64, u8-u64, f32, f64, byte, String, Option, Result)
+- `Macros.hpp` - DAKT_ASSERT, DAKT_UNREACHABLE, platform detection
+- `Memory.hpp` - Custom allocators (Linear, Pool, Arena)
+- `String.hpp` - String utilities (format, split, trim, case conversion)
+- `Buffer.hpp` - Byte buffer with read/write cursor
+- `Hash.hpp` - FNV-1a, CRC32, xxHash algorithms
+- `Time.hpp` - Clock, Timer, duration utilities
+- `FileSystem.hpp` - Path manipulation, file I/O
+- `Platform.hpp` - OS abstractions (user paths, DLL loading)
+- `Geometry.hpp` - Vec2, Vec4, Color, Rect, Circle (shared geometry primitives)
+
 ---
 
 ## High Priority
