@@ -6,13 +6,18 @@
 
 #include "dakt/core/String.hpp"
 
+#include <chrono>
 #include <cstdlib>
 #include <format>
 #include <thread>
 
 #if defined(DAKT_PLATFORM_WINDOWS)
-    #define WIN32_LEAN_AND_MEAN
-    #define NOMINMAX
+    #ifndef WIN32_LEAN_AND_MEAN
+        #define WIN32_LEAN_AND_MEAN
+    #endif
+    #ifndef NOMINMAX
+        #define NOMINMAX
+    #endif
     #include <ShlObj.h>
     #include <Shlwapi.h>
     #include <Windows.h>
@@ -356,12 +361,12 @@ u32 getThreadId()
 
 void sleepMs(u32 milliseconds)
 {
-    std::this_thread::sleep_for(Milliseconds(milliseconds));
+    std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
 }
 
 void sleepUs(u32 microseconds)
 {
-    std::this_thread::sleep_for(Microseconds(microseconds));
+    std::this_thread::sleep_for(std::chrono::microseconds(microseconds));
 }
 
 void yield()

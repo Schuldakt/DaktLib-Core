@@ -6,6 +6,7 @@
 // ============================================================================
 
 #include "Macros.hpp"
+#include "Platform.hpp"
 #include "Types.hpp"
 
 #include <atomic>

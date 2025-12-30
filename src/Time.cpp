@@ -1,147 +1,186 @@
-cmake_minimum_required(VERSION 4.1.1)
-project(DaktLib
-    VERSION 1.0.0
-    LANGUAGES CXX
-    DESCRIPTION "Modular C++ library for Star Citizen tooling"
-)
+// ============================================================================
+// DaktLib Core - Time Implementation
+// ============================================================================
 
-# ============================================================================
-# Global Settings
-# ============================================================================
+#include <dakt/core/Time.hpp>
 
-set(CMAKE_CXX_STANDARD 23)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
+#include <ctime>
 
-# Output directories
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${ CMAKE_BINARY_DIR } / lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${ CMAKE_BINARY_DIR } / lib)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${ CMAKE_BINARY_DIR } / bin)
+#if defined(DAKT_PLATFORM_WINDOWS)
+    #ifndef WIN32_LEAN_AND_MEAN
+        #define WIN32_LEAN_AND_MEAN
+    #endif
+    #ifndef NOMINMAX
+        #define NOMINMAX
+    #endif
+    #include <Windows.h>
+#else
+    #include <sys/time.h>
+#endif
 
-# ============================================================================
-# Build Options
-# ============================================================================
+namespace dakt::core
+{
 
-option(DAKT_BUILD_CORE      "Build Core module"      ON)
-option(DAKT_BUILD_CONFIG    "Build Config module"    ON)
-option(DAKT_BUILD_LOGGER    "Build Logger module"    ON)
-option(DAKT_BUILD_EVENTS    "Build Events module"    ON)
-option(DAKT_BUILD_VFS       "Build VFS module"       ON)
-option(DAKT_BUILD_PARSER    "Build Parser module"    ON)
-option(DAKT_BUILD_GUI       "Build GUI module"       ON)
-option(DAKT_BUILD_OVERLAY   "Build Overlay module"   ON)
-option(DAKT_BUILD_OCR       "Build OCR module"       ON)
-option(DAKT_BUILD_EXPORT    "Build Export module"    ON)
-option(DAKT_BUILD_TESTS     "Build unit tests"       ON)
-option(DAKT_BUILD_EXAMPLES  "Build examples"         OFF)
+// ============================================================================
+// Timestamp Validation
+// ============================================================================
 
-# ============================================================================
-# Compiler Configuration
-# ============================================================================
+bool time::Timestamp::isValid() const noexcept
+{
+    return year >= 1970 && year <= 9999 && month >= 1 && month <= 12 && day >= 1 && day <= 31 && hour <= 23 &&
+           minute <= 59 && second <= 59 && millisecond <= 999 && dayOfWeek <= 6 && dayOfYear >= 1 && dayOfYear <= 366;
+}
 
-if (MSVC)
-add_compile_options(
-    / W4             # Warning level 4
-    / WX             # Treat warnings as errors
-    / permissive - # Strict conformance
-    / Zc:__cplusplus # Correct __cplusplus macro
-    / utf - 8          # UTF - 8 source and execution charset
-)
-add_compile_definitions(
-    _CRT_SECURE_NO_WARNINGS
-    NOMINMAX        # Disable min / max macros
-    WIN32_LEAN_AND_MEAN
-)
-else()
-add_compile_options(
-    -Wall
-    - Wextra
-    - Wpedantic
-    - Werror
-    - Wno - unused - parameter
-)
-endif()
+// ============================================================================
+// Time Functions
+// ============================================================================
 
-# ============================================================================
-# Modules
-# ============================================================================
+namespace
+{
 
-if (DAKT_BUILD_CORE)
-add_subdirectory(Core)
-endif()
+time::Timestamp tmToTimestamp(const std::tm& tm, u32 ms = 0)
+{
+    time::Timestamp ts{};
+    ts.year = tm.tm_year + 1900;
+    ts.month = static_cast<u32>(tm.tm_mon + 1);
+    ts.day = static_cast<u32>(tm.tm_mday);
+    ts.hour = static_cast<u32>(tm.tm_hour);
+    ts.minute = static_cast<u32>(tm.tm_min);
+    ts.second = static_cast<u32>(tm.tm_sec);
+    ts.millisecond = ms;
+    ts.dayOfWeek = static_cast<u32>(tm.tm_wday);
+    ts.dayOfYear = static_cast<u32>(tm.tm_yday + 1);
+    return ts;
+}
 
-if (DAKT_BUILD_CONFIG)
-# add_subdirectory(Config)
-endif()
+}  // namespace
 
-if (DAKT_BUILD_LOGGER)
-# add_subdirectory(Logger)
-endif()
+namespace time
+{
 
-if (DAKT_BUILD_EVENTS)
-# add_subdirectory(Events)
-endif()
+Timestamp localTime()
+{
+    auto now = SystemClock::now();
+    auto t = SystemClock::to_time_t(now);
+    auto ms = std::chrono::duration_cast<Milliseconds>(now.time_since_epoch()) % 1000;
 
-if (DAKT_BUILD_VFS)
-# add_subdirectory(VFS)
-endif()
+    std::tm tm{};
+#if defined(DAKT_PLATFORM_WINDOWS)
+    localtime_s(&tm, &t);
+#else
+    localtime_r(&t, &tm);
+#endif
 
-if (DAKT_BUILD_PARSER)
-# add_subdirectory(Parser)
-endif()
+    return tmToTimestamp(tm, static_cast<u32>(ms.count()));
+}
 
-if (DAKT_BUILD_GUI)
-# add_subdirectory(GUI)
-endif()
+Timestamp utcTime()
+{
+    auto now = SystemClock::now();
+    auto t = SystemClock::to_time_t(now);
+    auto ms = std::chrono::duration_cast<Milliseconds>(now.time_since_epoch()) % 1000;
 
-if (DAKT_BUILD_OVERLAY)
-# add_subdirectory(Overlay)
-endif()
+    std::tm tm{};
+#if defined(DAKT_PLATFORM_WINDOWS)
+    gmtime_s(&tm, &t);
+#else
+    gmtime_r(&t, &tm);
+#endif
 
-if (DAKT_BUILD_OCR)
-# add_subdirectory(OCR)
-endif()
+    return tmToTimestamp(tm, static_cast<u32>(ms.count()));
+}
 
-if (DAKT_BUILD_EXPORT)
-# add_subdirectory(Export)
-endif()
+i64 unixTimestamp()
+{
+    return std::chrono::duration_cast<Seconds>(SystemClock::now().time_since_epoch()).count();
+}
 
-# ============================================================================
-# Testing
-# ============================================================================
+i64 unixTimestampMs()
+{
+    return std::chrono::duration_cast<Milliseconds>(SystemClock::now().time_since_epoch()).count();
+}
 
-if (DAKT_BUILD_TESTS)
-enable_testing()
-# add_subdirectory(Tests)
-endif()
+i64 toUnixTimestamp(const Timestamp& ts)
+{
+    std::tm tm{};
+    tm.tm_year = ts.year - 1900;
+    tm.tm_mon = static_cast<int>(ts.month) - 1;
+    tm.tm_mday = static_cast<int>(ts.day);
+    tm.tm_hour = static_cast<int>(ts.hour);
+    tm.tm_min = static_cast<int>(ts.minute);
+    tm.tm_sec = static_cast<int>(ts.second);
+    tm.tm_isdst = -1;
 
-# ============================================================================
-# Installation
-# ============================================================================
+#if defined(DAKT_PLATFORM_WINDOWS)
+    auto t = _mkgmtime(&tm);
+#else
+    auto t = timegm(&tm);
+#endif
 
-include(CMakePackageConfigHelpers)
-include(GNUInstallDirs)
+    return static_cast<i64>(t);
+}
 
-install(EXPORT DaktLibTargets
-    FILE DaktLibTargets.cmake
-    NAMESPACE Dakt::
-    DESTINATION ${ CMAKE_INSTALL_LIBDIR } / cmake / DaktLib
-)
+Timestamp fromUnixTimestamp(i64 unixTs)
+{
+    auto t = static_cast<std::time_t>(unixTs);
+    std::tm tm{};
 
-configure_package_config_file(
-    ${ CMAKE_CURRENT_SOURCE_DIR } / cmake / DaktLibConfig.cmake.in
-    ${ CMAKE_CURRENT_BINARY_DIR } / DaktLibConfig.cmake
-    INSTALL_DESTINATION ${ CMAKE_INSTALL_LIBDIR } / cmake / DaktLib
-)
+#if defined(DAKT_PLATFORM_WINDOWS)
+    localtime_s(&tm, &t);
+#else
+    localtime_r(&t, &tm);
+#endif
 
-write_basic_package_version_file(
-    ${ CMAKE_CURRENT_BINARY_DIR } / DaktLibConfigVersion.cmake
-    VERSION ${ PROJECT_VERSION }
-    COMPATIBILITY SameMajorVersion
-)
+    return tmToTimestamp(tm);
+}
 
-install(FILES
-    ${ CMAKE_CURRENT_BINARY_DIR } / DaktLibConfig.cmake
-    ${ CMAKE_CURRENT_BINARY_DIR } / DaktLibConfigVersion.cmake
-    DESTINATION ${ CMAKE_INSTALL_LIBDIR } / cmake / DaktLib
-)
+Timestamp fromUnixTimestampUtc(i64 unixTs)
+{
+    auto t = static_cast<std::time_t>(unixTs);
+    std::tm tm{};
+
+#if defined(DAKT_PLATFORM_WINDOWS)
+    gmtime_s(&tm, &t);
+#else
+    gmtime_r(&t, &tm);
+#endif
+
+    return tmToTimestamp(tm);
+}
+
+// ============================================================================
+// Time Formatting
+// ============================================================================
+
+String formatTimestamp(const Timestamp& ts, StringView /*format*/)
+{
+    // TODO: Parse format string properly
+    return std::format("{:04d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}", ts.year, ts.month, ts.day, ts.hour, ts.minute,
+                       ts.second);
+}
+
+String formatISO8601(const Timestamp& ts)
+{
+    return std::format("{:04d}-{:02d}-{:02d}T{:02d}:{:02d}:{:02d}", ts.year, ts.month, ts.day, ts.hour, ts.minute,
+                       ts.second);
+}
+
+String formatDate(const Timestamp& ts)
+{
+    return std::format("{:04d}-{:02d}-{:02d}", ts.year, ts.month, ts.day);
+}
+
+String formatTime(const Timestamp& ts)
+{
+    return std::format("{:02d}:{:02d}:{:02d}", ts.hour, ts.minute, ts.second);
+}
+
+String formatDateTime(const Timestamp& ts)
+{
+    return std::format("{:04d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}", ts.year, ts.month, ts.day, ts.hour, ts.minute,
+                       ts.second);
+}
+
+}  // namespace time
+
+}  // namespace dakt::core
