@@ -1,6 +1,6 @@
 # DaktLib-Core Architecture
 
-> Header-only C++23 module providing shared interfaces for the DaktLib ecosystem.
+> Header-first C++23 module providing shared interfaces for the DaktLib ecosystem, with an opt-in `src/` surface for default/runtime implementations.
 
 ## Overview
 
@@ -20,26 +20,35 @@
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-## Directory Structure
+## Directory Structure (modular)
 
 ```
 DaktLib-Core/
 ├── include/
 │   └── dakt/
 │       └── core/
-│           ├── interfaces/
+│           ├── Core.hpp                 # Aggregate public header
+│           ├── concepts/
+│           │   └── CoreConcepts.hpp
+│           ├── interfaces/              # Public interfaces only
 │           │   ├── ILogger.hpp
 │           │   ├── IAllocator.hpp
 │           │   ├── IEventBus.hpp
 │           │   ├── ISerializable.hpp
 │           │   └── IRegionProvider.hpp
-│           ├── types/
+│           ├── types/                   # Public lightweight value types
 │           │   ├── Result.hpp
 │           │   ├── Span.hpp
 │           │   └── StringView.hpp
-│           ├── concepts/
-│           │   └── CoreConcepts.hpp
-│           └── Core.hpp              # Aggregate header
+│           ├── logging/                 # Default runtime implementations (header hooks)
+│           │   └── NullLogger.hpp
+│           └── memory/
+│               └── SystemAllocator.hpp
+├── src/                                 # Optional runtime implementations
+│   ├── logging/
+│   │   └── NullLogger.cpp
+│   └── memory/
+│       └── SystemAllocator.cpp
 ├── tests/
 │   └── unit/
 ├── CMakeLists.txt
@@ -228,9 +237,9 @@ public:
 };
 ```
 
-## Concepts
-
-```cpp
+    // Concepts
+    template<typename T> concept Loggable;
+    template<typename T> concept Serializable;
 namespace dakt::core {
 
 template<typename T>
@@ -271,7 +280,7 @@ concept RegionProvider = requires(T provider, StringView name) {
 ```cmake
 # DaktLib-Core/CMakeLists.txt
 cmake_minimum_required(VERSION 4.2.1)
-project(DaktLib-Core VERSION 1.0.0 LANGUAGES CXX)
+project(DaktLib-Core VERSION 0.1.0 LANGUAGES CXX)
 
 add_library(DaktCore INTERFACE)
 add_library(Dakt::Core ALIAS DaktCore)
@@ -290,34 +299,7 @@ target_compile_features(DaktCore INTERFACE cxx_std_23)
 
 ## Default Implementations
 
-DaktLib-Core also provides minimal default implementations:
-
-### NullLogger
-```cpp
-struct NullLogger : ILogger {
-    void log(Severity, StringView) override {}
-    void flush() override {}
-    void setMinSeverity(Severity) override {}
-};
-```
-
-### SystemAllocator
-```cpp
-struct SystemAllocator : IAllocator {
-    void* allocate(std::size_t size, std::size_t alignment) override {
-        return ::operator new(size, std::align_val_t{alignment});
-    }
-    void deallocate(void* ptr, std::size_t size) override {
-        ::operator delete(ptr, size);
-    }
-    void* reallocate(void* ptr, std::size_t oldSize, std::size_t newSize) override {
-        void* newPtr = allocate(newSize, alignof(std::max_align_t));
-        std::memcpy(newPtr, ptr, std::min(oldSize, newSize));
-        deallocate(ptr, oldSize);
-        return newPtr;
-    }
-};
-```
+`include/dakt/core/logging` and `include/dakt/core/memory` expose hooks for default runtime implementations. Their compiled forms live in `src/logging` and `src/memory`. This keeps the public ABI header-first while allowing consumers to opt into `DAKTCORE_BUILD_IMPL` for concrete runtime plumbing without polluting the interface surface.
 
 ## Platform Support
 

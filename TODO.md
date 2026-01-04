@@ -9,47 +9,54 @@
 ## P0 — Foundation
 
 ### Project Setup
-- [ ] **[S]** Create directory structure (`include/dakt/core/...`)
-- [ ] **[S]** Setup `CMakeLists.txt` (INTERFACE library, install rules)
+- [x] **[S]** Create directory structure (`include/dakt/core/...`)
+- [x] **[S]** Create runtime scaffolding (`src/logging`, `src/memory`)
+- [x] **[S]** Setup `CMakeLists.txt` (INTERFACE library, install rules)
+- [x] **[S]** Enable `CMAKE_EXPORT_COMPILE_COMMANDS` + platform warning flags
 - [ ] **[S]** Add `.clang-format` configuration
-- [ ] **[S]** Add basic README.md
+- [x] **[S]** Add basic README.md
 
 ### Core Types
-- [ ] **[M]** Implement `Result<T, E>` with monadic ops (`map`, `andThen`, `orElse`)
-- [ ] **[S]** Implement `Result<void, E>` specialization
-- [ ] **[S]** Implement `Span<T>` (non-owning view)
-- [ ] **[S]** Implement `StringView` (null-safe, constexpr)
+- [x] **[M]** Implement `Result<T, E>` with monadic ops (`map`, `andThen`, `orElse`)
+- [x] **[S]** Implement `Result<void, E>` specialization
+- [x] **[S]** Implement `Span<T>` (non-owning view)
+- [x] **[S]** Implement `StringView` (null-safe, constexpr)
 
 ### Logging Interface
-- [ ] **[S]** Define `Severity` enum for logging levels
-- [ ] **[S]** Define `ILogger` interface
-- [ ] **[S]** Implement `NullLogger` default
+- [x] **[S]** Define `Severity` enum for logging levels
+- [x] **[S]** Define `ILogger` interface
+- [x] **[S]** Implement `NullLogger` default
 
 ### Memory Interface
-- [ ] **[S]** Define `IAllocator` interface
-- [ ] **[S]** Implement `SystemAllocator` default
+- [x] **[S]** Define `IAllocator` interface
+- [x] **[S]** Implement `SystemAllocator` default
+- [x] **[S]** Wire optional default impl build switch (`DAKTCORE_BUILD_IMPL`)
 
 ### Aggregate Header
-- [ ] **[S]** Create aggregate header `Core.hpp`
+- [x] **[S]** Create aggregate header `Core.hpp`
+
+### Layout Hygiene
+- [x] **[S]** Keep public interfaces/types under `include/dakt/core/...`
+- [x] **[S]** Keep runtime defaults under `src/...` and headers under `include/dakt/core/{logging,memory}`
 
 ---
 
 ## P1 — Core Interfaces
 
 ### Event System
-- [ ] **[M]** Define `IEventBus` interface (publish/subscribe pattern)
-- [ ] **[S]** Define `EventId` and `SubscriptionToken` types
+- [x] **[M]** Define `IEventBus` interface (publish/subscribe pattern)
+- [x] **[S]** Define `EventId` and `SubscriptionToken` types
 
 ### Serialization
-- [ ] **[M]** Define `ISerializable` interface (byte-based contract)
+- [x] **[M]** Define `ISerializable` interface (byte-based contract)
 
 ### Region System
-- [ ] **[S]** Define `Rect` struct for screen regions
-- [ ] **[S]** Define `IRegionProvider` interface
+- [x] **[S]** Define `Rect` struct for screen regions
+- [x] **[S]** Define `IRegionProvider` interface
 
 ### Concepts
-- [ ] **[M]** Add C++20/23 concepts (`Loggable`, `Serializable`, `Allocatable`)
-- [ ] **[S]** Add `RegionProvider` concept
+- [x] **[M]** Add C++20/23 concepts (`Loggable`, `Serializable`, `Allocatable`)
+- [x] **[S]** Add `RegionProvider` concept
 
 ### Quality
 - [ ] **[S]** Add `[[nodiscard]]` annotations throughout
